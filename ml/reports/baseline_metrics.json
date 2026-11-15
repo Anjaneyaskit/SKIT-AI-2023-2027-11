@@ -1,0 +1,158 @@
+{
+  "protein_g": {
+    "best_model": "XGBoost",
+    "models": {
+      "Logistic Regression": {
+        "cv_accuracy": 0.9575,
+        "test_accuracy": 0.9567,
+        "macro_precision": 0.8633,
+        "macro_recall": 0.8002,
+        "macro_f1": 0.8061
+      },
+      "Random Forest": {
+        "cv_accuracy": 0.9517,
+        "test_accuracy": 0.9633,
+        "macro_precision": 0.9079,
+        "macro_recall": 0.8319,
+        "macro_f1": 0.856
+      },
+      "XGBoost": {
+        "cv_accuracy": 0.9504,
+        "test_accuracy": 0.965,
+        "macro_precision": 0.9042,
+        "macro_recall": 0.8398,
+        "macro_f1": 0.8594
+      }
+    }
+  },
+  "iron_mg": {
+    "best_model": "Logistic Regression",
+    "models": {
+      "Logistic Regression": {
+        "cv_accuracy": 0.9546,
+        "test_accuracy": 0.96,
+        "macro_precision": 0.949,
+        "macro_recall": 0.9502,
+        "macro_f1": 0.9496
+      },
+      "Random Forest": {
+        "cv_accuracy": 0.9454,
+        "test_accuracy": 0.9567,
+        "macro_precision": 0.9458,
+        "macro_recall": 0.9455,
+        "macro_f1": 0.9456
+      },
+      "XGBoost": {
+        "cv_accuracy": 0.9467,
+        "test_accuracy": 0.955,
+        "macro_precision": 0.945,
+        "macro_recall": 0.9424,
+        "macro_f1": 0.9436
+      }
+    }
+  },
+  "calcium_mg": {
+    "best_model": "Random Forest",
+    "models": {
+      "Logistic Regression": {
+        "cv_accuracy": 0.8829,
+        "test_accuracy": 0.9,
+        "macro_precision": 0.8592,
+        "macro_recall": 0.8409,
+        "macro_f1": 0.849
+      },
+      "Random Forest": {
+        "cv_accuracy": 0.8754,
+        "test_accuracy": 0.9133,
+        "macro_precision": 0.8959,
+        "macro_recall": 0.8429,
+        "macro_f1": 0.8616
+      },
+      "XGBoost": {
+        "cv_accuracy": 0.8838,
+        "test_accuracy": 0.9,
+        "macro_precision": 0.8621,
+        "macro_recall": 0.8352,
+        "macro_f1": 0.847
+      }
+    }
+  },
+  "zinc_mg": {
+    "best_model": "Logistic Regression",
+    "models": {
+      "Logistic Regression": {
+        "cv_accuracy": 0.7492,
+        "test_accuracy": 0.7283,
+        "macro_precision": 0.7081,
+        "macro_recall": 0.7044,
+        "macro_f1": 0.7055
+      },
+      "Random Forest": {
+        "cv_accuracy": 0.7383,
+        "test_accuracy": 0.7233,
+        "macro_precision": 0.7011,
+        "macro_recall": 0.6988,
+        "macro_f1": 0.6996
+      },
+      "XGBoost": {
+        "cv_accuracy": 0.755,
+        "test_accuracy": 0.7267,
+        "macro_precision": 0.7063,
+        "macro_recall": 0.703,
+        "macro_f1": 0.7042
+      }
+    }
+  },
+  "vitamin_c_mg": {
+    "best_model": "Logistic Regression",
+    "models": {
+      "Logistic Regression": {
+        "cv_accuracy": 0.8796,
+        "test_accuracy": 0.885,
+        "macro_precision": 0.7948,
+        "macro_recall": 0.7747,
+        "macro_f1": 0.7825
+      },
+      "Random Forest": {
+        "cv_accuracy": 0.8675,
+        "test_accuracy": 0.8833,
+        "macro_precision": 0.8066,
+        "macro_recall": 0.7326,
+        "macro_f1": 0.742
+      },
+      "XGBoost": {
+        "cv_accuracy": 0.8738,
+        "test_accuracy": 0.8717,
+        "macro_precision": 0.7629,
+        "macro_recall": 0.7329,
+        "macro_f1": 0.7396
+      }
+    }
+  },
+  "folate_ug": {
+    "best_model": "XGBoost",
+    "models": {
+      "Logistic Regression": {
+        "cv_accuracy": 0.7054,
+        "test_accuracy": 0.6867,
+        "macro_precision": 0.512,
+        "macro_recall": 0.5661,
+        "macro_f1": 0.5208
+      },
+      "Random Forest": {
+        "cv_accuracy": 0.7088,
+        "test_accuracy": 0.735,
+        "macro_precision": 0.6354,
+        "macro_recall": 0.6079,
+        "macro_f1": 0.5815
+      },
+      "XGBoost": {
+        "cv_accuracy": 0.7154,
+        "test_accuracy": 0.7183,
+        "macro_precision": 0.612,
+        "macro_recall": 0.608,
+        "macro_f1": 0.5984
+      }
+    }
+  }
+}
