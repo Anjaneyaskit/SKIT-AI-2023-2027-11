@@ -10,7 +10,6 @@ from backend.db import get_db
 from backend.auth_utils import jwt_required
 from backend.services.nutrient_calculator import calculate_intake_summary
 from backend.services.rda_service import get_rda_service
-from ml.config import MODELS_DIR, TARGET_NUTRIENTS
 
 nutrition_bp = Blueprint('nutrition', __name__)
 
@@ -101,26 +100,5 @@ def get_user_daily_summary():
                 'activity_level': profile.get('activity_level')
             },
             'summary': summary
-        }
-    }), 200
-
-
-@nutrition_bp.route('/ml/status', methods=['GET'])
-def get_ml_status():
-    """Reports status of trained ML baseline models."""
-    available_models = {}
-    for nut in TARGET_NUTRIENTS:
-        model_path = os.path.join(MODELS_DIR, f"{nut}_baseline_model.joblib")
-        available_models[nut] = {
-            'trained': os.path.exists(model_path),
-            'model_path': model_path if os.path.exists(model_path) else None
-        }
-
-    return jsonify({
-        'success': True,
-        'message': 'ML baseline models status retrieved.',
-        'data': {
-            'target_nutrients': TARGET_NUTRIENTS,
-            'models': available_models
         }
     }), 200

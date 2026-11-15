@@ -6,7 +6,6 @@ from flask import Blueprint, request, jsonify, g
 from bson import ObjectId
 from backend.db import get_db
 from backend.auth_utils import jwt_required
-from backend.services.llm_service import get_llm_service
 
 history_bp = Blueprint('history', __name__)
 
@@ -169,32 +168,4 @@ def get_nutrient_trend():
             'timeline': timeline,
             'data_points': timeline
         }
-    }), 200
-
-
-@history_bp.route('/nlp/parse-meal', methods=['POST'])
-def parse_natural_language_meal():
-    """
-    Feature N1: Natural language free-text meal parser.
-    Uses LLM entity extraction with fuzzy matching and Indian household gram conversions.
-    """
-    data = request.get_json(silent=True) or {}
-    meal_text = (data.get('meal_text') or data.get('text') or '').strip()
-
-    if not meal_text or len(meal_text) < 3:
-        return jsonify({
-            'success': False,
-            'message': 'Please enter a valid meal description (e.g. 2 rotis, 1 katori dal and a banana).',
-            'data': None
-        }), 400
-
-    db = get_db()
-    llm = get_llm_service()
-    result = llm.parse_free_text_meal(meal_text, db=db)
-    result['matched_items'] = result.get('resolved_foods', [])
-
-    return jsonify({
-        'success': True,
-        'message': f"Parsed {result['items_parsed']} food items.",
-        'data': result
     }), 200

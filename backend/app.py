@@ -22,9 +22,7 @@ from backend.routes.profile import profile_bp
 from backend.routes.foods import foods_bp
 from backend.routes.intake import intake_bp
 from backend.routes.nutrition import nutrition_bp
-from backend.routes.assessment import assessment_bp
 from backend.routes.history import history_bp
-from backend.routes.recommendations import recommendations_bp
 
 
 def create_app(test_config=None):
@@ -69,9 +67,7 @@ def create_app(test_config=None):
     app.register_blueprint(foods_bp, url_prefix='/api/foods')
     app.register_blueprint(intake_bp, url_prefix='/api/intake')
     app.register_blueprint(nutrition_bp, url_prefix='/api/nutrition')
-    app.register_blueprint(assessment_bp, url_prefix='/api/assessment')
     app.register_blueprint(history_bp, url_prefix='/api/history')
-    app.register_blueprint(recommendations_bp, url_prefix='/api/recommendations')
 
     # Frontend Page Routes
     @app.route('/')
