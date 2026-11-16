@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Nutritional Screening Assessment - NutriScan{% endblock %}
+
+{% block layout %}
+<div class="sidebar">
+  <div class="sidebar-title">Menu</div>
+  <a href="/dashboard" class="sidebar-link">📊 Dashboard</a>
+  <a href="/intake" class="sidebar-link">🥗 Log Meal</a>
+  <a href="/questionnaire" class="sidebar-link">🩺 Symptoms</a>
+  <a href="/results" class="sidebar-link active">📋 Assessment</a>
+  <a href="/recommendations" class="sidebar-link">🍲 Recommendations</a>
+  <a href="/history" class="sidebar-link">📈 History</a>
+  <a href="/profile" class="sidebar-link">👤 My Profile</a>
+</div>
+
+<main class="main-content">
+  <!-- Top Action Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 1.85rem;">Comprehensive Nutritional Assessment</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        ML-driven deficiency risk classification & SHAP factor attributions based on IFCT 2017 & ICMR-NIN 2020.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <button onclick="window.print()" class="btn btn-outline" style="padding: 0.5rem 1rem;">
+        🖨️ Print / Save PDF
+      </button>
+      <button id="run-assessment-btn" class="btn btn-primary" style="padding: 0.5rem 1.25rem;">
+        ⚡ Re-run Assessment
+      </button>
+    </div>
+  </div>
+
+  <div id="results-alert" class="alert" style="display: none;"></div>
+
+  <!-- Loading State -->
+  <div id="results-loading" style="text-align: center; padding: 40px; display: none;">
+    <div style="font-size: 1.2rem; color: var(--text-muted);">Running ML models and calculating SHAP attributions...</div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="results-empty" class="card" style="text-align: center; padding: 3rem; display: none;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+    <h2>No Assessment Generated Yet</h2>
+    <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem auto;">
+      Log your meals for today and complete the symptom questionnaire to run your comprehensive screening.
+    </p>
+    <a href="/intake" class="btn btn-primary">+ Log Meals First</a>
+  </div>
+
+  <!-- Results Content Area -->
+  <div id="results-content" style="display: none;">
+    <!-- Headline KPI Cards -->
+    <div class="stat-grid">
+      <div class="stat-card" style="border-left: 5px solid var(--primary);">
+        <span class="stat-label">Screening Status</span>
+        <div id="kpi-status" class="stat-value" style="font-size: 1.5rem; color: var(--primary-dark);">Analyzed</div>
+        <div id="kpi-meta" class="stat-sub">Model: Variant A (NHANES)</div>
+      </div>
+      <div class="stat-card" style="border-left: 5px solid #ef4444;">
+        <span class="stat-label">Deficiencies Detected</span>
+        <div id="kpi-deficiencies" class="stat-value">0</div>
+        <div class="stat-sub">Moderate / High Risk Nutrients</div>
+      </div>
+      <div class="stat-card" style="border-left: 5px solid #0284c7;">
+        <span class="stat-label">Daily Calories</span>
+        <div id="kpi-calories" class="stat-value">-- kcal</div>
+        <div id="kpi-calories-sub" class="stat-sub">vs Target</div>
+      </div>
+      <div class="stat-card" style="border-left: 5px solid #10b981;">
+        <span class="stat-label">Daily Protein</span>
+        <div id="kpi-protein" class="stat-value">-- g</div>
+        <div id="kpi-protein-sub" class="stat-sub">vs Target</div>
+      </div>
+    </div>
+
+    <!-- Per-Nutrient Risk & SHAP Cards -->
+    <div style="margin-bottom: 2rem;">
+      <h2 style="font-size: 1.4rem; margin-bottom: 1rem;">Target Nutrient Clinical Risk Evaluation</h2>
+      <div id="nutrient-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Quick Link to Recommendations -->
+    <div class="card" style="background: linear-gradient(135deg, #f0fdf4, #e0f2fe); border-color: rgba(16, 185, 129, 0.3); text-align: center; padding: 2rem;">
+      <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--primary-dark);">Targeted Indian Food Recommendations</h3>
+      <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 1.25rem auto;">
+        NutriScan has identified nutrient-dense foods from the IFCT 2017 tables tailored specifically to your diet preference to help address detected deficiencies.
+      </p>
+      <a href="/recommendations" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+        View Personalized Food Recommendations & Pairing Tips &rarr;
+      </a>
+    </div>
+  </div>
+
+  <div class="disclaimer-banner">
+    <span>⚠️</span>
+    <div>
+      <strong>Medical Disclaimer:</strong> NutriScan is a screening and awareness tool, not a medical diagnosis. Nutritional totals, % RDA comparisons, and ML risk classifications are estimates based on IFCT 2017 tables and ICMR-NIN 2020 reference guidelines. Consult a licensed physician or clinical nutritionist for diagnostic evaluations.
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!api.requireAuth()) return;
+
+  const contentArea = document.getElementById('results-content');
+  const emptyArea = document.getElementById('results-empty');
+  const loadingArea = document.getElementById('results-loading');
+  const alertBox = document.getElementById('results-alert');
+  const runBtn = document.getElementById('run-assessment-btn');
+  const grid = document.getElementById('nutrient-cards-grid');
+
+  function showAlert(msg, isError = true) {
+    alertBox.textContent = msg;
+    alertBox.className = `alert ${isError ? 'alert-danger' : 'alert-success'}`;
+    alertBox.style.display = 'block';
+  }
+
+  async function loadAssessment() {
+    loadingArea.style.display = 'block';
+    contentArea.style.display = 'none';
+    emptyArea.style.display = 'none';
+
+    // Fetch specified assessment or latest assessment
+    const urlParams = new URLSearchParams(window.location.search);
+    const assessmentId = urlParams.get('id');
+    const endpoint = assessmentId ? `/assessment/${encodeURIComponent(assessmentId)}` : '/assessment/latest';
+    const res = await api.get(endpoint);
+    loadingArea.style.display = 'none';
+
+    if (!res.ok || !res.data.success) {
+      emptyArea.style.display = 'block';
+      return;
+    }
+
+    renderAssessment(res.data.data);
+  }
+
+  function renderAssessment(data) {
+    contentArea.style.display = 'block';
+
+    const preds = data.risk_predictions || {};
+    const coaching = data.coaching_notes || {};
+    const totals = data.nutrient_totals || {};
+    const summary = data.summary || {};
+
+    // Count deficiencies
+    let defCount = 0;
+    Object.values(preds).forEach(p => {
+      if (p.predicted_risk_label === 'High Risk' || p.predicted_risk_label === 'Moderate Risk') defCount++;
+    });
+
+    document.getElementById('kpi-deficiencies').textContent = defCount;
+    document.getElementById('kpi-calories').textContent = `${totals.energy_kcal || 0} kcal`;
+    document.getElementById('kpi-protein').textContent = `${totals.protein_g || 0} g`;
+    document.getElementById('kpi-meta').textContent = `Assessed: ${data.date} (took ${data.duration_seconds || 0}s)`;
+
+    grid.innerHTML = Object.entries(preds).map(([nutKey, p]) => {
+      const risk = p.predicted_risk_label || 'Low Risk';
+      let badgeClass = 'badge-success';
+      let borderCol = 'var(--primary)';
+      if (risk === 'High Risk') { badgeClass = 'badge-danger'; borderCol = '#ef4444'; }
+      else if (risk === 'Moderate Risk') { badgeClass = 'badge-warning'; borderCol = '#f59e0b'; }
+
+      const rdaPct = p.rda_percent !== null && p.rda_percent !== undefined ? `${p.rda_percent}%` : '--';
+      const coachingText = coaching[nutKey] || `Intake provides ${rdaPct} of daily target.`;
+      const factors = p.shap_top_factors || [];
+
+      return `
+        <div class="card" style="border-top: 4px solid ${borderCol}; margin-bottom: 0;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 0.75rem;">
+            <div>
+              <h3 style="font-size: 1.25rem;">${nutKey.replace('_', ' ').toUpperCase()}</h3>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">
+                Intake: <strong>${p.total_intake || 0}</strong> | Target: ${p.rda_value ? p.rda_value : 'Pending'}
+              </div>
+            </div>
+            <span class="badge ${badgeClass}" style="font-size: 0.85rem;">${risk}</span>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <div style="display:flex; justify-content:space-between; font-size: 0.8rem; margin-bottom: 2px;">
+              <span>Daily Requirement Fulfillment</span>
+              <strong>${rdaPct} RDA</strong>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar" style="width: ${Math.min(p.rda_percent || 0, 100)}%; background: ${borderCol};"></div>
+            </div>
+          </div>
+
+          <!-- Plain Language Educational Coaching -->
+          <div style="background: var(--bg-subtle); padding: 0.75rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 0.85rem; line-height: 1.5;">
+            💡 <strong>NutriScan Insights:</strong> ${coachingText}
+          </div>
+
+          <!-- SHAP Factor Attribution Breakdown -->
+          <div>
+            <div style="font-size: 0.78rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom: 0.35rem;">
+              SHAP Contributing Factors:
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+              ${factors.map(f => `
+                <div style="display:flex; justify-content:space-between; font-size: 0.8rem; color: var(--text-secondary);">
+                  <span>&bull; ${f.feature}</span>
+                  <span style="color: ${f.direction === 'increases_risk' ? '#ef4444' : '#10b981'}; font-weight:600;">
+                    ${f.direction === 'increases_risk' ? '▲ Risk Factor' : '▼ Protective'} (${f.magnitude})
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Handle Run Assessment Button
+  runBtn.addEventListener('click', async () => {
+    runBtn.disabled = true;
+    runBtn.textContent = 'Running Screening...';
+    loadingArea.style.display = 'block';
+    alertBox.style.display = 'none';
+
+    const today = new Date().toISOString().split('T')[0];
+    const res = await api.post('/assessment/run', { date: today, variant: 'A' });
+    runBtn.disabled = false;
+    runBtn.textContent = '⚡ Re-run Assessment';
+    loadingArea.style.display = 'none';
+
+    if (res.ok && res.data.success) {
+      showAlert('Nutritional screening completed successfully!', false);
+      renderAssessment(res.data.data);
+    } else {
+      showAlert(res.data.message || 'Error running assessment. Ensure you have logged meals first.');
+    }
+  });
+
+  loadAssessment();
+});
+</script>
+{% endblock %}

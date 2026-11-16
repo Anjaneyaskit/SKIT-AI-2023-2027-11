@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Nutritional Assessment - NutriScan{% endblock %}
+
+{% block layout %}
+<div class="sidebar">
+  <div class="sidebar-title">Menu</div>
+  <a href="/dashboard" class="sidebar-link">📊 Dashboard</a>
+  <a href="/intake" class="sidebar-link">🥗 Log Meal</a>
+  <a href="/profile" class="sidebar-link">👤 My Profile</a>
+  <a href="/results" class="sidebar-link active">📋 Assessment</a>
+</div>
+
+<main class="main-content">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.85rem;">Clinical Screening Assessment</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Consolidated longitudinal nutrition analysis & ML risk screening.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" style="text-align: center; padding: 2.5rem;">
+    <div style="font-size: 2.8rem; margin-bottom: 0.75rem;">🩺</div>
+    <h2 style="margin-bottom: 0.5rem;">Assessment Overview</h2>
+    <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 1.5rem auto;">
+      NutriScan compares your multi-day dietary averages against ICMR-NIN 2020 RDA targets.
+      Machine learning models evaluate your intake patterns to classify deficiency risk levels for Protein, Iron, Calcium, Zinc, Vitamin C, and Folate.
+    </p>
+    <a href="/dashboard" class="btn btn-primary">View Today's Breakdown on Dashboard &rarr;</a>
+  </div>
+
+  <div class="disclaimer-banner">
+    <span>⚠️</span>
+    <span><strong>Medical Disclaimer:</strong> NutriScan is a screening and awareness tool, not a medical diagnosis.</span>
+  </div>
+</main>
+{% endblock %}

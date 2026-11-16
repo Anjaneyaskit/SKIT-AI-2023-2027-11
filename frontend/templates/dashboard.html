@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NutriScan Nutrition Assessment{% endblock %}
+
+{% block layout %}
+<div class="sidebar">
+  <div class="sidebar-title">Menu</div>
+  <a href="/dashboard" class="sidebar-link active">📊 Dashboard</a>
+  <a href="/intake" class="sidebar-link">🥗 Log Meal</a>
+  <a href="/questionnaire" class="sidebar-link">🩺 Symptoms</a>
+  <a href="/results" class="sidebar-link">📋 Assessment</a>
+  <a href="/recommendations" class="sidebar-link">🍲 Dietary Recommendations</a>
+  <a href="/history" class="sidebar-link">📈 Progress History</a>
+  <a href="/profile" class="sidebar-link">👤 My Profile</a>
+</div>
+
+<main class="main-content">
+  <!-- Top Welcome & Date Row -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 id="user-welcome-text" style="font-size: 1.85rem;">Welcome to NutriScan</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Daily intake benchmarking against ICMR-NIN 2020 RDA guidelines.
+      </p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <label for="dashboard-date" style="font-weight: 600; font-size: 0.9rem;">Date:</label>
+      <input type="date" id="dashboard-date" class="form-control" style="width: auto; padding: 0.45rem 0.8rem;">
+      <a href="/intake" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.88rem;">+ Log Foods</a>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="dashboard-loading" style="text-align: center; padding: 40px; display: none;">
+    <div style="font-size: 1.2rem; color: var(--text-muted);">Loading nutritional evaluation...</div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="dashboard-empty-state" class="card" style="text-align: center; padding: 3rem; display: none;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🍽️</div>
+    <h2 style="margin-bottom: 0.5rem;">No Foods Logged for this Date</h2>
+    <p style="color: var(--text-muted); max-width: 480px; margin: 0 auto 1.5rem auto;">
+      You have not logged any meals for the selected date yet. Add what you ate to see calories, macro/micronutrients, and RDA coverage.
+    </p>
+    <a href="/intake" class="btn btn-primary">+ Log Foods for Today</a>
+  </div>
+
+  <!-- Dashboard Main Content Area -->
+  <div id="dashboard-content">
+    <!-- Stat Cards Grid -->
+    <div class="stat-grid">
+      <div class="stat-card calories">
+        <span class="stat-label">Energy</span>
+        <div id="stat-calories-val" class="stat-value">-- kcal</div>
+        <div id="stat-calories-sub" class="stat-sub">Target: -- kcal</div>
+      </div>
+      <div class="stat-card protein">
+        <span class="stat-label">Protein</span>
+        <div id="stat-protein-val" class="stat-value">-- g</div>
+        <div id="stat-protein-sub" class="stat-sub">Target: -- g</div>
+      </div>
+      <div class="stat-card iron">
+        <span class="stat-label">Iron</span>
+        <div id="stat-iron-val" class="stat-value">-- mg</div>
+        <div id="stat-iron-sub" class="stat-sub">Target: -- mg</div>
+      </div>
+      <div class="stat-card calcium">
+        <span class="stat-label">Calcium</span>
+        <div id="stat-calcium-val" class="stat-value">-- mg</div>
+        <div id="stat-calcium-sub" class="stat-sub">Target: -- mg</div>
+      </div>
+    </div>
+
+    <!-- Chart.js Visualization Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Nutrient RDA Fulfillment (% of Daily Requirement)</h2>
+        <span class="badge badge-info">ICMR-NIN 2020 Benchmark</span>
+      </div>
+      <div style="height: 300px; width: 100%;">
+        <canvas id="rda-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Logged Foods for this Day Card -->
+    <div class="card" id="dashboard-meals-card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <h2 class="card-title" style="margin-bottom: 0.2rem;">Logged Meals for this Day</h2>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Dishes & foods recorded in your daily intake</span>
+        </div>
+        <a href="/intake" class="btn btn-outline" style="padding: 0.35rem 0.8rem; font-size: 0.82rem;">+ Log More Foods</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Meal</th>
+              <th>Food Item</th>
+              <th>Portion</th>
+              <th>Est. Energy</th>
+              <th>Est. Protein</th>
+            </tr>
+          </thead>
+          <tbody id="dashboard-meals-body">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 15px;">Loading logged foods...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detailed Nutrient Breakdown Table -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Detailed Nutritional Profile & Risk Classification</h2>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Standardized per 100g IFCT 2017</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nutrient</th>
+              <th>Total Intake</th>
+              <th>Daily Target (RDA)</th>
+              <th>% of Requirement</th>
+              <th>Status / Risk Band</th>
+            </tr>
+          </thead>
+          <tbody id="nutrient-breakdown-body">
+            <!-- Dynamically populated by dashboard.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prominent Medical Disclaimer on Results/Dashboard Page -->
+  <div class="disclaimer-banner">
+    <span style="font-size: 1.2rem;">⚠️</span>
+    <div>
+      <strong>Medical Disclaimer:</strong> NutriScan is a screening and awareness tool, not a medical diagnosis. Nutritional values and % RDA comparisons are estimates based on IFCT 2017 tables and ICMR-NIN 2020 reference guidelines. Consult a licensed dietitian or physician for diagnostic evaluations.
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

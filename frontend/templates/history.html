@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+{% block title %}Nutritional History & Daily Meal Logs - NutriScan{% endblock %}
+
+{% block layout %}
+<div class="sidebar">
+  <div class="sidebar-title">Menu</div>
+  <a href="/dashboard" class="sidebar-link">📊 Dashboard</a>
+  <a href="/intake" class="sidebar-link">🥗 Log Meal</a>
+  <a href="/questionnaire" class="sidebar-link">🩺 Symptoms</a>
+  <a href="/results" class="sidebar-link">📋 Assessment</a>
+  <a href="/recommendations" class="sidebar-link">🍲 Recommendations</a>
+  <a href="/history" class="sidebar-link active">📈 History</a>
+  <a href="/profile" class="sidebar-link">👤 My Profile</a>
+</div>
+
+<main class="main-content">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 1.85rem; margin-bottom: 0.25rem;">Nutritional History & Daily Logs</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0;">
+        Review your saved daily meals and longitudinal clinical screening assessments.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <a href="/intake" class="btn btn-outline" style="padding: 0.5rem 1rem;">
+        🥗 + Log Meals
+      </a>
+      <a href="/questionnaire" class="btn btn-primary" style="padding: 0.5rem 1.25rem;">
+        ⚡ Run New Assessment
+      </a>
+    </div>
+  </div>
+
+  <!-- Tab Switcher -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem;">
+    <button id="tab-assessments-btn" class="btn btn-primary" style="border-radius: 20px; padding: 0.45rem 1.25rem; font-size: 0.9rem;" onclick="switchHistoryTab('assessments')">
+      📋 Clinical Assessments History (<span id="assessments-count-badge">0</span>)
+    </button>
+    <button id="tab-meals-btn" class="btn btn-outline" style="border-radius: 20px; padding: 0.45rem 1.25rem; font-size: 0.9rem;" onclick="switchHistoryTab('meals')">
+      🥗 Daily Meal Logs (Day-Wise) (<span id="meals-count-badge">0</span>)
+    </button>
+  </div>
+
+  <!-- ================= TAB 1: CLINICAL ASSESSMENTS ================= -->
+  <div id="tab-assessments-content">
+    <!-- Trend Graph Card -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+          <h2 class="card-title" style="margin-bottom: 0.2rem;">Longitudinal Risk & RDA % Trajectory</h2>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Visualizing historical % RDA intake against clinical deficiency thresholds</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <label for="trendNutrientSelect" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Nutrient:</label>
+          <select id="trendNutrientSelect" class="form-control" style="width: auto; padding: 0.35rem 0.75rem; font-size: 0.85rem;" onchange="loadTrendData()">
+            <option value="protein_g">Protein</option>
+            <option value="iron_mg">Iron</option>
+            <option value="calcium_mg">Calcium</option>
+            <option value="zinc_mg">Zinc</option>
+            <option value="vitamin_c_mg">Vitamin C</option>
+            <option value="folate_ug">Folate (B9)</option>
+          </select>
+        </div>
+      </div>
+      <div style="position: relative; height: 280px; width: 100%;">
+        <canvas id="trendChart"></canvas>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap;">
+        <span><span class="badge badge-success">&ge; 75% RDA</span> Optimal / Low Risk</span>
+        <span><span class="badge badge-warning">50% - 74% RDA</span> Borderline / Moderate Risk</span>
+        <span><span class="badge badge-danger">&lt; 50% RDA</span> High Deficiency Risk</span>
+      </div>
+    </div>
+
+    <!-- Assessments Table Card -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+          <h2 class="card-title" style="margin-bottom: 0.2rem;">Recorded Nutritional Screenings</h2>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Historical assessments stored in MongoDB Atlas</span>
+        </div>
+        <button id="compareBtn" class="btn btn-outline" style="padding: 0.35rem 0.85rem; font-size: 0.82rem;" disabled onclick="compareSelectedAssessments()">
+          ⚖️ Compare Selected (0/2)
+        </button>
+      </div>
+
+      <div id="loadingHistory" style="text-align: center; padding: 30px;">
+        <span style="color: var(--text-muted);">Loading assessment records...</span>
+      </div>
+
+      <div id="emptyHistory" style="text-align: center; padding: 40px; display: none;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📋</div>
+        <h3>No Assessment Records Found</h3>
+        <p style="color: var(--text-muted); max-width: 450px; margin: 0 auto 1.25rem auto;">
+          You haven't run any complete nutritional evaluations yet. Log what you ate and take the assessment.
+        </p>
+        <a href="/intake" class="btn btn-primary">+ Log Meals First</a>
+      </div>
+
+      <div id="historyTableContainer" class="table-responsive" style="display: none;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">Select</th>
+              <th>Date & Time</th>
+              <th>Energy (kcal)</th>
+              <th>Protein</th>
+              <th>Flagged Deficiencies</th>
+              <th>Avg % RDA</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div id="paginationNav" style="display: none; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+        <span id="pageInfo" style="font-size: 0.85rem; color: var(--text-muted);">Showing page 1</span>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="prevPageBtn" class="btn btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;" onclick="changePage(-1)">Previous</button>
+          <button id="nextPageBtn" class="btn btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;" onclick="changePage(1)">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Container -->
+    <div id="comparisonContainer" class="card" style="display: none; margin-top: 1.5rem; border: 2px solid var(--primary);">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="card-title">⚖️ Side-by-Side Assessment Comparison</h2>
+        <button class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;" onclick="closeComparison()">✕ Close</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table" style="text-align: center;">
+          <thead>
+            <tr>
+              <th style="text-align: left;">Nutrient</th>
+              <th id="compHeaderA">Assessment A</th>
+              <th id="compHeaderB">Assessment B</th>
+              <th>Progress / Delta</th>
+            </tr>
+          </thead>
+          <tbody id="comparisonTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 2: DAILY MEAL LOGS ================= -->
+  <div id="tab-meals-content" style="display: none;">
+    <div id="loadingMeals" style="text-align: center; padding: 30px;">
+      <span style="color: var(--text-muted);">Loading day-wise meal logs...</span>
+    </div>
+
+    <div id="emptyMeals" class="card" style="text-align: center; padding: 40px; display: none;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🍽️</div>
+      <h3>No Daily Meal Logs Found</h3>
+      <p style="color: var(--text-muted); max-width: 450px; margin: 0 auto 1.25rem auto;">
+        You haven't logged any meals yet. Start by logging what you ate today!
+      </p>
+      <a href="/intake" class="btn btn-primary">+ Log Today's Meal</a>
+    </div>
+
+    <div id="mealsContainer" style="display: flex; flex-direction: column; gap: 1.25rem;">
+      <!-- Populated dynamically with Day Cards -->
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let assessmentList = [];
+let dailyMealLogs = [];
+let selectedAssessmentIds = new Set();
+let trendChartInstance = null;
+
+function switchHistoryTab(tab) {
+  const assBtn = document.getElementById('tab-assessments-btn');
+  const mealBtn = document.getElementById('tab-meals-btn');
+  const assContent = document.getElementById('tab-assessments-content');
+  const mealContent = document.getElementById('tab-meals-content');
+
+  if (tab === 'assessments') {
+    assBtn.className = 'btn btn-primary';
+    mealBtn.className = 'btn btn-outline';
+    assContent.style.display = 'block';
+    mealContent.style.display = 'none';
+  } else {
+    assBtn.className = 'btn btn-outline';
+    mealBtn.className = 'btn btn-primary';
+    assContent.style.display = 'none';
+    mealContent.style.display = 'block';
+  }
+}
+
+async function loadHistory(page = 1) {
+  if (!api.requireAuth()) return;
+  currentPage = page;
+
+  const loadingEl = document.getElementById('loadingHistory');
+  const tableContainer = document.getElementById('historyTableContainer');
+  const emptyEl = document.getElementById('emptyHistory');
+  const paginationEl = document.getElementById('paginationNav');
+
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (tableContainer) tableContainer.style.display = 'none';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (paginationEl) paginationEl.style.display = 'none';
+
+  try {
+    const res = await api.get(`/history?page=${page}&limit=10`);
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (!res.ok || !res.data.success) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+
+    const payload = res.data.data || res.data;
+    assessmentList = payload.assessments || [];
+    totalPages = payload.total_pages || 1;
+
+    document.getElementById('assessments-count-badge').textContent = payload.total_count || assessmentList.length;
+
+    if (assessmentList.length === 0) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+
+    renderHistoryTable();
+    loadTrendData();
+  } catch (err) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    console.error('Error fetching assessment history:', err);
+  }
+}
+
+function renderHistoryTable() {
+  const tbody = document.getElementById('historyTableBody');
+  tbody.innerHTML = '';
+
+  assessmentList.forEach(item => {
+    const docId = item.id || item._id;
+    const dt = item.timestamp ? new Date(item.timestamp).toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) : item.date;
+
+    const highBadges = (item.high_risk || []).map(n => `<span class="badge badge-danger" style="margin-right:3px; text-transform:uppercase;">${n}</span>`).join('') || '<span style="color:#64748b; font-size:0.8rem;">None</span>';
+    const modBadges = (item.moderate_risk || []).map(n => `<span class="badge badge-warning" style="margin-right:3px; text-transform:uppercase;">${n}</span>`).join('');
+    const allBadges = `${highBadges} ${modBadges}`.trim();
+    const isChecked = selectedAssessmentIds.has(docId) ? 'checked' : '';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <input type="checkbox" value="${docId}" ${isChecked} onchange="toggleSelectAssessment('${docId}')">
+      </td>
+      <td>
+        <strong>${dt}</strong>
+        <span style="display:block; font-size:0.75rem; color:#64748b;">${item.model_variant || 'Model: Variant A'}</span>
+      </td>
+      <td><strong>${item.calories || '--'}</strong> kcal</td>
+      <td><strong>${item.protein || '--'}</strong> g</td>
+      <td>${allBadges}</td>
+      <td>
+        <strong>${Math.round(item.avg_rda_pct || 0)}%</strong>
+        <div class="progress-container" style="height:6px; width:70px; margin-top:3px;">
+          <div class="progress-bar" style="width:${Math.min(item.avg_rda_pct || 0, 100)}%; background:${(item.avg_rda_pct || 0) < 50 ? '#ef4444' : (item.avg_rda_pct || 0) < 75 ? '#f59e0b' : '#10b981'};"></div>
+        </div>
+      </td>
+      <td style="text-align: right; white-space: nowrap;">
+        <a href="/results?id=${docId}" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; margin-right: 0.25rem;">
+          📋 View
+        </a>
+        <a href="/recommendations?assessment_id=${docId}" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; color: var(--primary);">
+          🍲 Foods
+        </a>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('historyTableContainer').style.display = 'block';
+  const nav = document.getElementById('paginationNav');
+  if (nav) {
+    nav.style.display = 'flex';
+    document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+    document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+  }
+}
+
+async function loadDailyMealLogs() {
+  const loadingEl = document.getElementById('loadingMeals');
+  const emptyEl = document.getElementById('emptyMeals');
+  const container = document.getElementById('mealsContainer');
+
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (container) container.innerHTML = '';
+
+  try {
+    const res = await api.get('/history/daily-meals');
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (!res.ok || !res.data.success) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+
+    const days = res.data.data.days || [];
+    document.getElementById('meals-count-badge').textContent = days.length;
+
+    if (days.length === 0) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+
+    container.innerHTML = days.map((day, idx) => {
+      const entriesHtml = (day.entries || []).map(e => `
+        <tr>
+          <td><span class="badge badge-info" style="text-transform: capitalize;">${e.meal_type || 'meal'}</span></td>
+          <td><strong>${e.food_name}</strong> <span style="font-size:0.75rem; color:#64748b;">(${e.food_code})</span></td>
+          <td>${e.quantity_g} g</td>
+          <td><strong>${e.calories}</strong> kcal</td>
+          <td><strong>${e.protein_g}</strong> g</td>
+        </tr>
+      `).join('');
+
+      return `
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+            <div>
+              <h3 style="font-size: 1.15rem; margin-bottom: 0.2rem;">📅 Logged Meals for ${day.date}</h3>
+              <span style="font-size: 0.85rem; color: var(--text-muted);">${day.total_items} food item(s) recorded in database</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items:center;">
+              <a href="/intake" class="btn btn-outline" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">+ Edit on Intake</a>
+              <a href="/results" class="btn btn-primary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">📋 View Assessment</a>
+            </div>
+          </div>
+
+          <!-- Day Totals Bar -->
+          <div style="display:flex; justify-content:space-around; background: var(--bg-subtle); padding: 0.75rem; border-radius: 6px; margin: 0.75rem 0; flex-wrap:wrap; gap:0.5rem; text-align:center;">
+            <div>
+              <span style="font-size:0.75rem; text-transform:uppercase; color:#64748b; display:block;">Energy</span>
+              <strong style="font-size:1.05rem; color:var(--primary-dark);">${day.total_calories} kcal</strong>
+            </div>
+            <div>
+              <span style="font-size:0.75rem; text-transform:uppercase; color:#64748b; display:block;">Protein</span>
+              <strong style="font-size:1.05rem; color:#10b981;">${day.total_protein} g</strong>
+            </div>
+            <div>
+              <span style="font-size:0.75rem; text-transform:uppercase; color:#64748b; display:block;">Carbs</span>
+              <strong style="font-size:1.05rem; color:#0284c7;">${day.total_carbs} g</strong>
+            </div>
+            <div>
+              <span style="font-size:0.75rem; text-transform:uppercase; color:#64748b; display:block;">Fat</span>
+              <strong style="font-size:1.05rem; color:#f59e0b;">${day.total_fat} g</strong>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Meal</th>
+                  <th>Food Item</th>
+                  <th>Portion</th>
+                  <th>Calories</th>
+                  <th>Protein</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${entriesHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+    console.error('Error fetching daily meal history:', err);
+  }
+}
+
+function toggleSelectAssessment(id) {
+  if (selectedAssessmentIds.has(id)) {
+    selectedAssessmentIds.delete(id);
+  } else {
+    if (selectedAssessmentIds.size >= 2) {
+      alert('You can select a maximum of 2 assessments for comparison.');
+      renderHistoryTable();
+      return;
+    }
+    selectedAssessmentIds.add(id);
+  }
+  updateCompareButton();
+}
+
+function updateCompareButton() {
+  const btn = document.getElementById('compareBtn');
+  btn.textContent = `⚖️ Compare Selected (${selectedAssessmentIds.size}/2)`;
+  btn.disabled = selectedAssessmentIds.size !== 2;
+  if (selectedAssessmentIds.size === 2) {
+    btn.className = 'btn btn-primary';
+  } else {
+    btn.className = 'btn btn-outline';
+  }
+}
+
+function compareSelectedAssessments() {
+  if (selectedAssessmentIds.size !== 2) return;
+  const ids = Array.from(selectedAssessmentIds);
+  const itemA = assessmentList.find(x => (x.id || x._id) === ids[0]);
+  const itemB = assessmentList.find(x => (x.id || x._id) === ids[1]);
+  if (!itemA || !itemB) return;
+
+  document.getElementById('compHeaderA').innerHTML = `Assessment A<br><small style="color:var(--text-muted); font-weight:normal;">${itemA.date || ''}</small>`;
+  document.getElementById('compHeaderB').innerHTML = `Assessment B<br><small style="color:var(--text-muted); font-weight:normal;">${itemB.date || ''}</small>`;
+
+  const nutrients = ['protein_g', 'iron_mg', 'calcium_mg', 'zinc_mg', 'vitamin_c_mg', 'folate_ug'];
+  const names = {
+    protein_g: 'Protein', iron_mg: 'Iron (Fe)', calcium_mg: 'Calcium (Ca)',
+    zinc_mg: 'Zinc (Zn)', vitamin_c_mg: 'Vitamin C', folate_ug: 'Folate (B9)'
+  };
+
+  const tbody = document.getElementById('comparisonTableBody');
+  tbody.innerHTML = '';
+
+  nutrients.forEach(nutr => {
+    const resA = (itemA.results && itemA.results[nutr]) ? itemA.results[nutr] : { predicted_risk_label: 'Low Risk', rda_percent: 0 };
+    const resB = (itemB.results && itemB.results[nutr]) ? itemB.results[nutr] : { predicted_risk_label: 'Low Risk', rda_percent: 0 };
+
+    const rdaA = resA.rda_percent || 0;
+    const rdaB = resB.rda_percent || 0;
+    const diff = rdaB - rdaA;
+
+    let deltaHtml = `<span style="color:#64748b;">0%</span>`;
+    if (diff > 0) {
+      deltaHtml = `<strong style="color:#10b981;">▲ +${diff.toFixed(1)}%</strong>`;
+    } else if (diff < 0) {
+      deltaHtml = `<strong style="color:#ef4444;">▼ ${diff.toFixed(1)}%</strong>`;
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align: left; font-weight: 600;">${names[nutr] || nutr}</td>
+      <td>
+        <span class="badge ${resA.predicted_risk_label === 'High Risk' ? 'badge-danger' : resA.predicted_risk_label === 'Moderate Risk' ? 'badge-warning' : 'badge-success'}">${resA.predicted_risk_label || 'Low Risk'}</span>
+        <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">${Math.round(rdaA)}% RDA</div>
+      </td>
+      <td>
+        <span class="badge ${resB.predicted_risk_label === 'High Risk' ? 'badge-danger' : resB.predicted_risk_label === 'Moderate Risk' ? 'badge-warning' : 'badge-success'}">${resB.predicted_risk_label || 'Low Risk'}</span>
+        <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">${Math.round(rdaB)}% RDA</div>
+      </td>
+      <td>${deltaHtml}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const compContainer = document.getElementById('comparisonContainer');
+  compContainer.style.display = 'block';
+  compContainer.scrollIntoView({ behavior: 'smooth' });
+}
+
+function closeComparison() {
+  document.getElementById('comparisonContainer').style.display = 'none';
+}
+
+function loadTrendData() {
+  const nutr = document.getElementById('trendNutrientSelect').value;
+  const chronological = [...assessmentList].sort((a,b) => new Date(a.timestamp || a.date) - new Date(b.timestamp || b.date));
+
+  const labels = chronological.map(x => {
+    const d = new Date(x.timestamp || x.date);
+    return isNaN(d) ? (x.date || 'Entry') : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  });
+
+  const values = chronological.map(x => {
+    if (x.results && x.results[nutr]) {
+      return Number(x.results[nutr].rda_percent || 0).toFixed(1);
+    }
+    return 0;
+  });
+
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  if (trendChartInstance) {
+    trendChartInstance.destroy();
+  }
+
+  trendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels.length > 0 ? labels : ['No Data'],
+      datasets: [
+        {
+          label: '% RDA Fulfilled',
+          data: values.length > 0 ? values : [0],
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2.5,
+          pointBackgroundColor: '#10b981',
+          pointRadius: 5
+        },
+        {
+          label: 'Target (100% RDA)',
+          data: labels.map(() => 100),
+          borderColor: '#10b981',
+          borderDash: [5, 5],
+          borderWidth: 1.5,
+          fill: false,
+          pointRadius: 0
+        },
+        {
+          label: 'Moderate Risk (75% RDA)',
+          data: labels.map(() => 75),
+          borderColor: '#f59e0b',
+          borderDash: [4, 4],
+          borderWidth: 1.5,
+          fill: false,
+          pointRadius: 0
+        },
+        {
+          label: 'High Risk Line (50% RDA)',
+          data: labels.map(() => 50),
+          borderColor: '#ef4444',
+          borderDash: [2, 2],
+          borderWidth: 1.5,
+          fill: false,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          min: 0,
+          max: 130,
+          title: { display: true, text: '% of Daily ICMR-NIN RDA' }
+        }
+      }
+    }
+  });
+}
+
+function changePage(delta) {
+  loadHistory(currentPage + delta);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadHistory(1);
+  loadDailyMealLogs();
+});
+</script>
+{% endblock %}

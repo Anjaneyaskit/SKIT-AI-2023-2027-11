@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}Personalized Dietary Plan - NutriScan{% endblock %}
+
+{% block layout %}
+<div class="sidebar">
+  <div class="sidebar-title">Menu</div>
+  <a href="/dashboard" class="sidebar-link">📊 Dashboard</a>
+  <a href="/intake" class="sidebar-link">🥗 Log Meal</a>
+  <a href="/questionnaire" class="sidebar-link">🩺 Symptoms</a>
+  <a href="/results" class="sidebar-link">📋 Assessment</a>
+  <a href="/recommendations" class="sidebar-link active">🍲 Dietary Recommendations</a>
+  <a href="/history" class="sidebar-link">📈 Progress History</a>
+  <a href="/profile" class="sidebar-link">👤 My Profile</a>
+</div>
+
+<main class="main-content">
+  <!-- Top Action & Navigation Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 1.85rem; margin-bottom: 0.25rem;">Personalized Nutritional Dietary Plan</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0;">
+        Evidence-based food recommendations from the Indian Food Composition Tables (IFCT 2017) calibrated to your ICMR-NIN 2020 RDA targets.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center;" class="no-print">
+      <a href="/results" class="btn btn-outline" style="padding: 0.5rem 1rem;">
+        &larr; Back to Assessment
+      </a>
+      <button onclick="window.print()" class="btn btn-primary" style="padding: 0.5rem 1.25rem;">
+        🖨️ Print Dietary Plan
+      </button>
+    </div>
+  </div>
+
+  <!-- Assessment Snapshot & Personalized Plan Banner -->
+  <div class="card" id="recs-meta-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border: 1px solid var(--border);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+          🥗
+        </div>
+        <div>
+          <h2 style="font-size: 1.15rem; margin-bottom: 0.2rem;" id="meta-user-heading">Personalized Food Prescription</h2>
+          <span style="font-size: 0.85rem; color: var(--text-muted);" id="meta-user-sub">
+            Based on clinical risk evaluation &amp; bio-density per 100g edible portion.
+          </span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <div style="text-align: right;">
+          <span style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Deficiencies Detected</span>
+          <span class="badge badge-warning" id="meta-deficiencies-badge" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;">Loading...</span>
+        </div>
+        <div style="text-align: right;">
+          <span style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Calorie Baseline</span>
+          <strong id="meta-calories-val" style="font-size: 1rem; color: var(--text-primary);">-- kcal</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Customization Toolbar -->
+  <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem;" class="no-print">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <!-- Nutrient Focus Select -->
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <label for="nutrientSelect" style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); white-space: nowrap;">
+          <span style="color: var(--primary);">🎯</span> Nutrient Focus:
+        </label>
+        <select id="nutrientSelect" class="form-control" style="width: auto; min-width: 240px; padding: 0.45rem 0.85rem; font-size: 0.9rem;" onchange="applyFilters()">
+          <option value="flagged" selected>⚠️ Flagged Deficiencies Only</option>
+          <option value="all">🌐 All Monitored Nutrients (Complete Plan)</option>
+          <option value="calcium_mg">Calcium (Ca)</option>
+          <option value="vitamin_c_mg">Vitamin C (Ascorbic Acid)</option>
+          <option value="iron_mg">Iron (Fe)</option>
+          <option value="protein_g">Protein</option>
+          <option value="zinc_mg">Zinc (Zn)</option>
+          <option value="folate_ug">Total Folate (Vit B9)</option>
+        </select>
+      </div>
+
+      <!-- Dietary Preference Radios -->
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">
+          🍽️ Diet:
+        </span>
+        <label class="diet-radio-btn" id="lbl-diet-all">
+          <input type="radio" name="dietRadio" value="all" checked onchange="onDietChange('all')"> All Foods
+        </label>
+        <label class="diet-radio-btn" id="lbl-diet-veg">
+          <input type="radio" name="dietRadio" value="veg" onchange="onDietChange('veg')"> 🥬 Vegetarian
+        </label>
+        <label class="diet-radio-btn" id="lbl-diet-vegan">
+          <input type="radio" name="dietRadio" value="vegan" onchange="onDietChange('vegan')"> 🌱 Vegan
+        </label>
+        <label class="diet-radio-btn" id="lbl-diet-eggetarian">
+          <input type="radio" name="dietRadio" value="eggetarian" onchange="onDietChange('eggetarian')"> 🥚 Eggetarian
+        </label>
+        <label class="diet-radio-btn" id="lbl-diet-non-veg">
+          <input type="radio" name="dietRadio" value="non-veg" onchange="onDietChange('non-veg')"> 🍗 Non-Veg
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loadingState" style="text-align: center; padding: 50px 20px; display: none;">
+    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">⏳</div>
+    <div style="font-size: 1.2rem; font-weight: 600; color: var(--primary);">Personalizing your IFCT food suggestions...</div>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Benchmarking against ICMR-NIN 2020 RDA recommendations and absorption synergies.</p>
+  </div>
+
+  <!-- Empty / Healthy State -->
+  <div id="emptyState" class="card" style="text-align: center; padding: 3rem 1.5rem; display: none;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #10b981;">No Deficiencies Detected!</h2>
+    <p style="color: var(--text-muted); max-width: 520px; margin: 0 auto 1.5rem auto; font-size: 0.95rem;">
+      Your latest assessment showed all monitored nutrients within healthy clinical ranges. You can explore standard maintenance food sources below to maintain optimal vitality.
+    </p>
+    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+      <button class="btn btn-outline" onclick="setNutrientFilter('calcium_mg')">🥛 Explore Calcium Foods</button>
+      <button class="btn btn-outline" onclick="setNutrientFilter('vitamin_c_mg')">🍊 Explore Vitamin C Foods</button>
+      <button class="btn btn-outline" onclick="setNutrientFilter('iron_mg')">🥬 Explore Iron Rich Foods</button>
+      <button class="btn btn-outline" onclick="setNutrientFilter('protein_g')">💪 Explore High Protein Foods</button>
+    </div>
+  </div>
+
+  <!-- Recommendations Container -->
+  <div id="recsContainer" style="display: none;">
+    <!-- Nutrient sections injected dynamically -->
+  </div>
+
+  <!-- Clinical & Print Disclaimer -->
+  <div class="disclaimer-banner" style="margin-top: 2rem;">
+    <span style="font-size: 1.3rem;">⚠️</span>
+    <div style="font-size: 0.88rem; line-height: 1.5;">
+      <strong>Clinical Disclaimer:</strong> NutriScan dietary suggestions are derived from ICMR-NIN guidelines and the Indian Food Composition Tables (IFCT 2017). They are intended for nutritional guidance and deficiency risk reduction only. These suggestions do not constitute a medical prescription, diagnosis, or treatment plan. Please consult an accredited clinical dietitian or doctor before taking therapeutic high-dose supplements or undertaking drastic diet modifications.
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentData = null;
+let currentDiet = 'all';
+
+async function fetchRecommendations(dietOverride = null) {
+  const loading = document.getElementById('loadingState');
+  const container = document.getElementById('recsContainer');
+  const empty = document.getElementById('emptyState');
+
+  if (loading) loading.style.display = 'block';
+  if (container) container.style.display = 'none';
+  if (empty) empty.style.display = 'none';
+
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const assessmentId = urlParams.get('assessment_id') || urlParams.get('id');
+    const dietParam = dietOverride || currentDiet;
+
+    let url = '/recommendations';
+    const params = [];
+    if (assessmentId) params.push(`assessment_id=${encodeURIComponent(assessmentId)}`);
+    if (dietParam && dietParam !== 'all') params.push(`diet=${encodeURIComponent(dietParam)}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+
+    const res = await api.get(url);
+    if (loading) loading.style.display = 'none';
+
+    if (!res.ok || !res.data || !res.data.success) {
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+
+    currentData = res.data.data;
+    renderAll();
+  } catch (err) {
+    console.error('Error fetching recommendations:', err);
+    if (loading) loading.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+  }
+}
+
+function renderAll() {
+  if (!currentData) return;
+
+  // 1. Update Snapshot Meta Banner
+  const defCount = currentData.deficient_nutrients_count || Object.keys(currentData.recommendations || {}).length;
+  const defBadge = document.getElementById('meta-deficiencies-badge');
+  if (defBadge) {
+    if (defCount > 0) {
+      defBadge.textContent = `${defCount} Flagged Nutrients`;
+      defBadge.className = 'badge badge-danger';
+    } else {
+      defBadge.textContent = 'All Optimal (0 Deficiencies)';
+      defBadge.className = 'badge badge-success';
+    }
+  }
+
+  const cals = (currentData.daily_summary && currentData.daily_summary.calories) || 0;
+  const calEl = document.getElementById('meta-calories-val');
+  if (calEl) {
+    calEl.textContent = `${Math.round(cals)} kcal`;
+  }
+
+  const subEl = document.getElementById('meta-user-sub');
+  if (subEl && currentData.user_profile) {
+    const p = currentData.user_profile;
+    subEl.textContent = `Calibrated for ${p.gender || 'User'} (${p.age || 25} yrs) &bull; ${p.diet_preference ? p.diet_preference.toUpperCase() : 'ALL'} Diet &bull; IFCT 2017 & ICMR-NIN 2020`;
+  }
+
+  // 2. Render Cards according to active filter
+  applyFilters();
+}
+
+function applyFilters() {
+  const container = document.getElementById('recsContainer');
+  const empty = document.getElementById('emptyState');
+  if (!container || !currentData) return;
+
+  container.innerHTML = '';
+  const selectedFocus = document.getElementById('nutrientSelect').value;
+  const selectedDiet = document.querySelector('input[name="dietRadio"]:checked')?.value || 'all';
+
+  const flaggedRecs = currentData.recommendations || {};
+  const allNutrients = currentData.all_nutrients || {};
+
+  let targetNutrientKeys = [];
+
+  if (selectedFocus === 'flagged') {
+    targetNutrientKeys = Object.keys(flaggedRecs);
+  } else if (selectedFocus === 'all') {
+    // Show all 6 target nutrients
+    targetNutrientKeys = Object.keys(allNutrients).length > 0 ? Object.keys(allNutrients) : Object.keys(flaggedRecs);
+  } else {
+    // Specific nutrient selected
+    targetNutrientKeys = [selectedFocus];
+  }
+
+  if (targetNutrientKeys.length === 0) {
+    container.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+
+  if (empty) empty.style.display = 'none';
+  container.style.display = 'block';
+
+  let sectionsRendered = 0;
+
+  targetNutrientKeys.forEach(nutKey => {
+    // Prefer data from flagged recs if present, otherwise fall back to all_nutrients catalog
+    const data = flaggedRecs[nutKey] || allNutrients[nutKey];
+    if (!data) return;
+
+    // Filter food list by dietary preference
+    const rawFoods = data.foods || data.top_foods || [];
+    const filteredFoods = rawFoods.filter(food => {
+      const d = (food.diet_category || food.diet_type || '').toLowerCase();
+      if (selectedDiet === 'all') return true;
+      if (selectedDiet === 'vegan') return d === 'vegan';
+      if (selectedDiet === 'veg') return d === 'veg' || d === 'vegan';
+      if (selectedDiet === 'eggetarian') return d === 'eggetarian' || d === 'veg' || d === 'vegan';
+      if (selectedDiet === 'non-veg') return true;
+      return true;
+    });
+
+    sectionsRendered++;
+
+    // Determine risk badge styling
+    let badgeClass = 'badge-success';
+    let riskLabel = data.risk_level || 'Optimal / General';
+    let borderCol = '#10b981';
+
+    if (riskLabel === 'High Risk') {
+      badgeClass = 'badge-danger';
+      borderCol = '#ef4444';
+    } else if (riskLabel === 'Moderate Risk') {
+      badgeClass = 'badge-warning';
+      borderCol = '#f59e0b';
+    } else if (riskLabel.includes('General')) {
+      badgeClass = 'badge-info';
+      borderCol = 'var(--primary)';
+    }
+
+    // Header stats string
+    let intakeInfo = '';
+    if (data.user_intake !== null && data.user_intake !== undefined && data.user_rda) {
+      intakeInfo = `Current Intake: <strong>${data.user_intake} ${data.unit}</strong> | Daily Target (RDA): <strong>${data.user_rda} ${data.unit}</strong> (${data.rda_percent}% met)`;
+    } else {
+      intakeInfo = `Standard RDA Target: <strong>${data.user_rda || '--'} ${data.unit}</strong>`;
+    }
+
+    // Synergy Tip callout
+    const synergyTip = data.synergy_tip || (data.clinical_pairing_tips && data.clinical_pairing_tips[0]) || '';
+    const synergyHtml = synergyTip ? `
+      <div style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid var(--primary); padding: 0.85rem 1rem; border-radius: 6px; margin-bottom: 1.25rem; font-size: 0.88rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 0.75rem;">
+        <span style="font-size: 1.2rem; line-height: 1;">💡</span>
+        <div>
+          <strong style="color: var(--primary-dark);">Bioavailability &amp; Absorption Synergy:</strong>
+          <span>${synergyTip}</span>
+        </div>
+      </div>
+    ` : '';
+
+    // Foods Grid HTML
+    let foodsGridHtml = '';
+    if (filteredFoods.length === 0) {
+      foodsGridHtml = `
+        <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); background: var(--bg-subtle); border-radius: 8px;">
+          No matching <strong>${selectedDiet.toUpperCase()}</strong> foods found for ${data.nutrient_name}. Try selecting "All Foods" or a broader diet preference above.
+        </div>
+      `;
+    } else {
+      foodsGridHtml = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+          ${filteredFoods.map(f => {
+            const dCat = (f.diet_category || f.diet_type || 'vegan').toLowerCase();
+            let dietBadge = '<span class="badge badge-success" style="font-size:0.75rem;">VEG</span>';
+            if (dCat === 'vegan') dietBadge = '<span class="badge badge-info" style="font-size:0.75rem;">VEGAN</span>';
+            else if (dCat === 'eggetarian') dietBadge = '<span class="badge badge-warning" style="font-size:0.75rem;">EGG</span>';
+            else if (dCat === 'non-veg') dietBadge = '<span class="badge badge-danger" style="font-size:0.75rem;">NON-VEG</span>';
+
+            const antinutrHtml = f.antinutrient_note ? `
+              <div style="margin-top: 0.5rem; font-size: 0.78rem; color: #b45309; background: #fffbeb; padding: 0.4rem 0.6rem; border-radius: 4px; display: flex; align-items: flex-start; gap: 0.4rem;">
+                <span>⚠️</span>
+                <span>${f.antinutrient_note}</span>
+              </div>
+            ` : '';
+
+            return `
+              <div class="card" style="margin-bottom: 0; padding: 1.15rem; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <div>
+                      <h4 style="font-size: 1.05rem; margin-bottom: 0.2rem; color: var(--text-primary);">${f.name || f.food_name}</h4>
+                      <span style="font-size: 0.78rem; color: var(--text-muted);">${f.category || 'General Food'} &bull; Code: ${f.food_code || '-'}</span>
+                    </div>
+                    <div>${dietBadge}</div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--bg-subtle); padding: 0.65rem 0.5rem; border-radius: 6px; margin: 0.65rem 0; text-align: center;">
+                    <div>
+                      <span style="display: block; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Portion</span>
+                      <strong style="font-size: 0.95rem; color: var(--text-primary);">${f.typical_portion_g || f.typical_serving_g}g</strong>
+                    </div>
+                    <div style="border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+                      <span style="display: block; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Yield</span>
+                      <strong style="font-size: 0.95rem; color: var(--primary-dark);">${f.yield_per_serving || f.nutrient_per_serving} ${data.unit}</strong>
+                    </div>
+                    <div>
+                      <span style="display: block; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">% RDA</span>
+                      <strong style="font-size: 0.95rem; color: #10b981;">${Math.round(f.percent_daily_rda || f.rda_pct_per_serving)}%</strong>
+                    </div>
+                  </div>
+                </div>
+
+                ${antinutrHtml}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    const sectionHtml = `
+      <div class="card" style="margin-bottom: 2rem; border-top: 4px solid ${borderCol};">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <h3 style="font-size: 1.3rem; margin-bottom: 0; color: var(--text-primary);">
+                Targeted Foods for ${data.nutrient_name}
+              </h3>
+              <span class="badge ${badgeClass}" style="font-size: 0.8rem;">${riskLabel}</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+              ${intakeInfo}
+            </div>
+          </div>
+          <span class="badge badge-info" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
+            ${filteredFoods.length} Recommended Foods
+          </span>
+        </div>
+
+        <div style="padding: 1.25rem 0 0 0;">
+          ${synergyHtml}
+          ${foodsGridHtml}
+        </div>
+      </div>
+    `;
+
+    container.innerHTML += sectionHtml;
+  });
+
+  if (sectionsRendered === 0) {
+    container.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+  }
+}
+
+function onDietChange(newDiet) {
+  currentDiet = newDiet;
+  // Update active pill style
+  document.querySelectorAll('.diet-radio-btn').forEach(lbl => lbl.classList.remove('active'));
+  const activeLbl = document.getElementById(`lbl-diet-${newDiet}`);
+  if (activeLbl) activeLbl.classList.add('active');
+
+  // Re-fetch or re-filter
+  fetchRecommendations(newDiet);
+}
+
+function setNutrientFilter(nutrKey) {
+  const sel = document.getElementById('nutrientSelect');
+  if (sel) {
+    sel.value = nutrKey;
+    applyFilters();
+    window.scrollTo({ top: sel.offsetTop - 80, behavior: 'smooth' });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!api.requireAuth()) return;
+  fetchRecommendations();
+});
+</script>
+
+<style>
+.diet-radio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: white;
+  transition: all 0.15s ease;
+}
+.diet-radio-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--primary);
+}
+.diet-radio-btn input[type="radio"] {
+  cursor: pointer;
+  margin: 0;
+}
+.diet-radio-btn.active {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}NutriScan - AI Nutrition Detection & Recommendation Platform{% endblock %}
+
+{% block content %}
+<div class="landing-page" style="max-width: 1140px; margin: 1rem auto; padding: 0 1rem;">
+
+  <!-- Hero Section -->
+  <div style="text-align: center; padding: 3rem 1rem 2.5rem; background: radial-gradient(circle at top, rgba(37,99,235,0.06) 0%, transparent 70%); border-radius: 16px;">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 0.35rem 1rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.25rem;">
+      <span>🇮🇳</span> Powered by IFCT 2017 & ICMR-NIN 2020 RDA Guidelines
+    </div>
+    
+    <h1 style="font-size: 3rem; font-weight: 800; line-height: 1.2; margin-bottom: 1.25rem; color: #0f172a; letter-spacing: -0.02em;">
+      Evidence-Based Nutrition Intelligence for <span style="color: var(--primary);">Indian Diets</span>
+    </h1>
+
+    <p style="font-size: 1.18rem; color: #475569; max-width: 780px; margin: 0 auto 2rem; line-height: 1.7;">
+      NutriScan bridges the gap between traditional Indian culinary habits and modern clinical biochemistry. By mapping 542 indigenous foods directly to verified ICMR-NIN 2020 targets, our transparent machine-learning pipeline identifies sub-clinical micronutrient deficiencies before they manifest as chronic clinical conditions.
+    </p>
+
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem;">
+      <a href="/register" class="btn btn-primary" style="padding: 0.95rem 2.2rem; font-size: 1.05rem; font-weight: 600; box-shadow: 0 4px 14px rgba(37,99,235,0.3);">
+        Start Free Assessment &rarr;
+      </a>
+      <a href="/login" class="btn btn-outline" style="padding: 0.95rem 2rem; font-size: 1.05rem; font-weight: 600;">
+        Sign In to Portal
+      </a>
+    </div>
+
+    <!-- Quick Stat Strip -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 2rem; padding: 1.25rem; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+      <div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: #0f172a;">542</div>
+        <div style="font-size: 0.82rem; color: #64748b; font-weight: 500;">IFCT 2017 Tested Foods</div>
+      </div>
+      <div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: #2563eb;">138</div>
+        <div style="font-size: 0.82rem; color: #64748b; font-weight: 500;">ICMR-NIN 2020 RDA Targets</div>
+      </div>
+      <div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: #059669;">6 Core</div>
+        <div style="font-size: 0.82rem; color: #64748b; font-weight: 500;">Micronutrients Monitored</div>
+      </div>
+      <div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: #d97706;">SHAP</div>
+        <div style="font-size: 0.82rem; color: #64748b; font-weight: 500;">Transparent AI Explanations</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clinical Screening Pathway -->
+  <div style="margin: 4.5rem 0 3.5rem;">
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+      <h2 style="font-size: 2.1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">
+        The NutriScan 4-Step Clinical Pathway
+      </h2>
+      <p style="color: #64748b; font-size: 1rem; max-width: 650px; margin: 0 auto;">
+        From portion-calibrated dietary logs to biomarker-grounded machine learning risk classifications.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+      <div class="card" style="border-top: 4px solid #2563eb; position: relative;">
+        <div style="font-size: 2rem; margin-bottom: 0.75rem;">👤</div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #2563eb; text-transform: uppercase; margin-bottom: 0.25rem;">Step 1</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">RDA Calibration</h3>
+        <p style="font-size: 0.88rem; color: #64748b; line-height: 1.6; margin: 0;">
+          Calculates your exact daily nutrient requirements according to age, gender, pregnancy/lactation stage, and physical activity level based on ICMR-NIN 2020.
+        </p>
+      </div>
+
+      <div class="card" style="border-top: 4px solid #059669; position: relative;">
+        <div style="font-size: 2rem; margin-bottom: 0.75rem;">🍛</div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; margin-bottom: 0.25rem;">Step 2</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Dietary Recall</h3>
+        <p style="font-size: 0.88rem; color: #64748b; line-height: 1.6; margin: 0;">
+          Log meals through an AI free-text parser or search 542 IFCT foods. Converts Indian household measures (katoris, rotis, glasses) into standardized grams.
+        </p>
+      </div>
+
+      <div class="card" style="border-top: 4px solid #d97706; position: relative;">
+        <div style="font-size: 2rem; margin-bottom: 0.75rem;">🩺</div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #d97706; text-transform: uppercase; margin-bottom: 0.25rem;">Step 3</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Symptom Evaluation</h3>
+        <p style="font-size: 0.88rem; color: #64748b; line-height: 1.6; margin: 0;">
+          Screen clinical indicators (fatigue, brittle nails, numbness, bone pain, hair thinning) on a validated 0–4 scale to enhance dietary intake signal reliability.
+        </p>
+      </div>
+
+      <div class="card" style="border-top: 4px solid #7c3aed; position: relative;">
+        <div style="font-size: 2rem; margin-bottom: 0.75rem;">🎯</div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #7c3aed; text-transform: uppercase; margin-bottom: 0.25rem;">Step 4</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">ML Risk & SHAP</h3>
+        <p style="font-size: 0.88rem; color: #64748b; line-height: 1.6; margin: 0;">
+          Ensemble models classify Low / Moderate / High deficiency risks with probability scores and SHAP explainability, accompanied by bioavailable IFCT food fixes.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Micronutrient Focus Areas -->
+  <div style="margin: 4rem 0;">
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+      <h2 style="font-size: 2rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">
+        Crucial Deficiencies in Indian Demographics
+      </h2>
+      <p style="color: #64748b; font-size: 0.98rem; max-width: 650px; margin: 0 auto;">
+        NutriScan focuses on high-prevalence nutritional vulnerabilities identified in national health surveys (NFHS-5).
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+      
+      <!-- Iron -->
+      <div class="card" style="border-left: 4px solid #ef4444;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Iron (Fe) & Anemia Risk</h4>
+          <span class="badge badge-danger" style="font-size: 0.75rem;">57% Women (NFHS-5)</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 0.75rem;">
+          Cereal-based Indian diets contain high phytate-to-iron molar ratios, inhibiting non-heme iron absorption. NutriScan flags intake deficits and highlights pairing with Vitamin C enhancers (amla, guava, lime).
+        </p>
+        <div style="font-size: 0.78rem; color: #64748b; background: #f8fafc; padding: 0.5rem; border-radius: 6px;">
+          <strong>Clinical Biomarker:</strong> Serum Ferritin &lt; 15 µg/L (WHO Anemia Threshold)
+        </div>
+      </div>
+
+      <!-- Vitamin D -->
+      <div class="card" style="border-left: 4px solid #f59e0b;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Vitamin D Hypovitaminosis</h4>
+          <span class="badge badge-warning" style="font-size: 0.75rem;">70-90% Urban Indians</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 0.75rem;">
+          Skin pigmentation and indoor lifestyle severely restrict cutaneous cholecalciferol synthesis. Essential for calcium homeostasis, bone density, and neuromuscular health.
+        </p>
+        <div style="font-size: 0.78rem; color: #64748b; background: #f8fafc; padding: 0.5rem; border-radius: 6px;">
+          <strong>Clinical Biomarker:</strong> Serum 25(OH)D &lt; 20 ng/mL (IOM / Endocrine Society)
+        </div>
+      </div>
+
+      <!-- Vitamin B12 -->
+      <div class="card" style="border-left: 4px solid #8b5cf6;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Vitamin B12 (Cobalamin)</h4>
+          <span class="badge badge-info" style="font-size: 0.75rem;">Common in Vegetarians</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 0.75rem;">
+          Cobalamin is absent in unfortified plant foods. Deficiencies lead to megaloblastic anemia, peripheral neuropathy, and cognitive fatigue. NutriScan assesses dairy/egg frequency and flags need for fortification.
+        </p>
+        <div style="font-size: 0.78rem; color: #64748b; background: #f8fafc; padding: 0.5rem; border-radius: 6px;">
+          <strong>Clinical Biomarker:</strong> Serum B12 &lt; 200 pg/mL (NIH ODS / WHO)
+        </div>
+      </div>
+
+      <!-- Folate -->
+      <div class="card" style="border-left: 4px solid #10b981;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Folate (Vitamin B9)</h4>
+          <span class="badge badge-success" style="font-size: 0.75rem;">Essential in Pregnancy</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 0.75rem;">
+          Critical for single-carbon transfer, DNA synthesis, and homocysteine remethylation. Prolonged high-heat cooking of green leafy vegetables causes up to 60% folate loss.
+        </p>
+        <div style="font-size: 0.78rem; color: #64748b; background: #f8fafc; padding: 0.5rem; border-radius: 6px;">
+          <strong>Clinical Biomarker:</strong> Serum Folate &lt; 3 ng/mL / RBC Folate &lt; 140 ng/mL
+        </div>
+      </div>
+
+      <!-- Zinc -->
+      <div class="card" style="border-left: 4px solid #06b6d4;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Zinc (Zn) & Immune Function</h4>
+          <span class="badge badge-info" style="font-size: 0.75rem;">Phytate-Bound</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 0.75rem;">
+          Zinc is an essential catalytic cofactor in over 300 metalloenzymes. Whole wheat and pulse phytic acid binds zinc in the gut lumen, drastically lowering fractional bioavailability.
+        </p>
+        <div style="font-size: 0.78rem; color: #64748b; background: #f8fafc; padding: 0.5rem; border-radius: 6px;">
+          <strong>Clinical Biomarker:</strong> Serum Zinc &lt; 70 µg/dL (IZiNCG / WHO)
+        </div>
+      </div>
+
+      <!-- Protein Quality -->
+      <div class="card" style="border-left: 4px solid #64748b;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Protein Quantity & Quality (PDCAAS)</h4>
+          <span class="badge badge-warning" style="font-size: 0.75rem;">0.83 g/kg Target</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 0.75rem;">
+          Vegetarian cereal staples often lack lysine, while legumes lack methionine. NutriScan assesses your daily protein intake against ICMR-NIN 2020 and suggests complementary amino acid pairings.
+        </p>
+        <div style="font-size: 0.78rem; color: #64748b; background: #f8fafc; padding: 0.5rem; border-radius: 6px;">
+          <strong>Standard Metric:</strong> % Daily ICMR-NIN Reference Intake Fulfilled
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Non-Negotiable Scientific Principles Banner -->
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; margin: 3rem 0;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+      <span>⚖️</span> Built on Deterministic, Auditable Science
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; font-size: 0.9rem; color: #475569;">
+      <div>
+        <strong style="color: #0f172a;">1. Deterministic Core Calculations</strong><br>
+        Nutrient calculations, % RDA matching, and risk classification are executed by reproducible code and trained ML models only. Large language models never invent nutrient numbers or classify risk.
+      </div>
+      <div>
+        <strong style="color: #0f172a;">2. Transparent Explainability (SHAP)</strong><br>
+        Every assessment produces Shapley additive explanations so you understand exactly why a risk score was assigned — whether due to low dietary density, high physical exertion, or clinical symptoms.
+      </div>
+      <div>
+        <strong style="color: #0f172a;">3. Privacy & Zero Health-Data Logging</strong><br>
+        Your biometric parameters and symptoms are stored securely in your private workspace and are never shared or logged into external AI prompts without direct anonymization and user consent.
+      </div>
+    </div>
+  </div>
+
+  <!-- Medical Disclaimer -->
+  <div class="disclaimer-banner" style="margin-top: 2rem;">
+    <span>⚠️</span>
+    <span style="font-size: 0.85rem;">
+      <strong>Institutional Screening Disclaimer:</strong> NutriScan is developed as an academic and technological screening system benchmarked against ICMR-NIN 2020 RDA tables and IFCT 2017 compositions. It does not provide medical diagnoses, treatment protocols, or prescription advice. Always consult a licensed physician or registered clinical dietitian for diagnostic lab testing and therapeutic guidance.
+    </span>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile - NutriScan{% endblock %}
+
+{% block layout %}
+<div class="sidebar">
+  <div class="sidebar-title">Menu</div>
+  <a href="/dashboard" class="sidebar-link">📊 Dashboard</a>
+  <a href="/intake" class="sidebar-link">🥗 Log Meal</a>
+  <a href="/questionnaire" class="sidebar-link">🩺 Symptoms</a>
+  <a href="/results" class="sidebar-link">📋 Assessment</a>
+  <a href="/recommendations" class="sidebar-link">🍲 Dietary Recommendations</a>
+  <a href="/history" class="sidebar-link">📈 Progress History</a>
+  <a href="/profile" class="sidebar-link active">👤 My Profile</a>
+</div>
+
+<main class="main-content">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.85rem;">Personal Profile & Anthropometrics</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Your age, gender, and activity parameters determine your ICMR-NIN 2020 RDA targets.
+      </p>
+    </div>
+  </div>
+
+  <div id="profile-alert" class="alert" style="display: none;"></div>
+
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <!-- Profile Form -->
+    <div class="card">
+      <form id="profile-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="age" class="form-label">Age (years)</label>
+            <input type="number" id="age" class="form-control" min="1" max="120" placeholder="25" required>
+          </div>
+          <div class="form-group">
+            <label for="gender" class="form-label">Gender</label>
+            <select id="gender" class="form-control" required>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="height_cm" class="form-label">Height (cm)</label>
+            <input type="number" id="height_cm" class="form-control" step="0.5" min="50" max="250" placeholder="175" required>
+          </div>
+          <div class="form-group">
+            <label for="weight_kg" class="form-label">Weight (kg)</label>
+            <input type="number" id="weight_kg" class="form-control" step="0.5" min="10" max="300" placeholder="68" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="activity_level" class="form-label">Physical Activity Level</label>
+            <select id="activity_level" class="form-control" required>
+              <option value="sedentary">Sedentary (desk job / minimal exercise)</option>
+              <option value="light">Lightly Active (light exercise 1-3 days/wk)</option>
+              <option value="moderate">Moderately Active (exercise 3-5 days/wk)</option>
+              <option value="active">Very Active (hard daily training / physical work)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="diet_preference" class="form-label">Dietary Preference</label>
+            <select id="diet_preference" class="form-control" required>
+              <option value="veg">Vegetarian</option>
+              <option value="non-veg">Non-Vegetarian</option>
+              <option value="eggetarian">Eggetarian</option>
+              <option value="vegan">Vegan</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="special_condition" class="form-label">Physiological Cohort / Special Condition</label>
+          <select id="special_condition" class="form-control">
+            <option value="none">Standard Adult</option>
+            <option value="pregnant">Pregnant</option>
+            <option value="lactating_0_6m">Lactating (0-6 months postpartum)</option>
+            <option value="lactating_7_12m">Lactating (7-12 months postpartum)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 1rem;">
+          <div style="display: flex; align-items: flex-start; gap: 0.6rem;">
+            <input type="checkbox" id="ai_consent" style="margin-top: 0.25rem; width: 18px; height: 18px; cursor: pointer;">
+            <div>
+              <label for="ai_consent" style="font-weight: 600; font-size: 0.9rem; color: #1e293b; cursor: pointer; display: block;">
+                Allow AI-Assisted Meal Parsing & Summary Generation (Phase N)
+              </label>
+              <span style="font-size: 0.8rem; color: #64748b; line-height: 1.4; display: block;">
+                When enabled, anonymous food descriptions or computed nutrient totals are processed to provide plain-language coaching. No personal names, emails, or biometric identifiers are ever transmitted.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">
+          Save Profile & Recalculate BMI
+        </button>
+      </form>
+    </div>
+
+    <!-- Anthropometric Summary Card -->
+    <div>
+      <div class="card" style="text-align: center; background: linear-gradient(135deg, #ffffff, #f0fdf4);">
+        <h3 style="font-size: 1.15rem; margin-bottom: 0.75rem; color: var(--text-secondary);">Body Mass Index</h3>
+        <div id="bmi-display" style="font-size: 2.2rem; font-weight: 800; color: var(--primary-dark); font-family: var(--font-heading);">
+          --
+        </div>
+        <div style="margin-top: 0.5rem;">
+          <span id="bmi-category-badge" class="badge badge-info">Awaiting Data</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem; line-height: 1.4;">
+          BMI is calculated as $\text{weight (kg)} / \text{height (m)}^2$ based on WHO Asian-Indian population cutoffs.
+        </p>
+      </div>
+
+      <div class="card" style="font-size: 0.85rem; color: var(--text-secondary);">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Why this matters</h4>
+        <p>
+          ICMR-NIN 2020 RDA tables specify tailored daily requirements for iron, calcium, and protein depending on whether your body is active or sedentary, and adjusted for gender and age groups.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer-banner">
+    <span>⚠️</span>
+    <span><strong>Screening Disclaimer:</strong> Anthropometric metrics are for preliminary nutritional screening only, not medical diagnosis.</span>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}

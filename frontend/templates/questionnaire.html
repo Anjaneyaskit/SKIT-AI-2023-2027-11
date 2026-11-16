@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Clinical Symptom Screening - NutriScan{% endblock %}
+
+{% block layout %}
+<div class="sidebar">
+  <div class="sidebar-title">Menu</div>
+  <a href="/dashboard" class="sidebar-link">📊 Dashboard</a>
+  <a href="/intake" class="sidebar-link">🥗 Log Meal</a>
+  <a href="/questionnaire" class="sidebar-link active">🩺 Symptoms</a>
+  <a href="/results" class="sidebar-link">📋 Assessment</a>
+  <a href="/recommendations" class="sidebar-link">🍲 Recommendations</a>
+  <a href="/history" class="sidebar-link">📈 History</a>
+  <a href="/profile" class="sidebar-link">👤 My Profile</a>
+</div>
+
+<main class="main-content">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 1.85rem;">Clinical Symptom Screening Questionnaire</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Self-reported physical symptoms help detect early sub-clinical nutrient deficiencies.
+      </p>
+    </div>
+    <div>
+      <span id="questionnaire-progress-text" class="badge badge-info" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+        0 / 12 Answered
+      </span>
+    </div>
+  </div>
+
+  <div id="symptoms-alert" class="alert" style="display: none;"></div>
+
+  <!-- Progress Bar -->
+  <div class="progress-container" style="height: 8px; margin-bottom: 1.75rem;">
+    <div id="questionnaire-progress-bar" class="progress-bar" style="width: 0%;"></div>
+  </div>
+
+  <form id="questionnaire-form">
+    <div id="questions-container">
+      <!-- Dynamically populated or static questions -->
+    </div>
+
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div style="font-size: 0.85rem; color: var(--text-muted);">
+        Scale: 0 (None) &bull; 1 (Mild) &bull; 2 (Moderate) &bull; 3 (Frequent) &bull; 4 (Severe Daily)
+      </div>
+      <button type="submit" id="save-symptoms-btn" class="btn btn-primary" style="padding: 0.85rem 2rem;">
+        Save Symptom Responses &rarr;
+      </button>
+    </div>
+  </form>
+
+  <div class="disclaimer-banner">
+    <span>⚠️</span>
+    <span><strong>Medical Disclaimer:</strong> Symptom questionnaires are preliminary screening indicators and do not constitute clinical diagnosis.</span>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!api.requireAuth()) return;
+
+  const container = document.getElementById('questions-container');
+  const alertBox = document.getElementById('symptoms-alert');
+  const progressText = document.getElementById('questionnaire-progress-text');
+  const progressBar = document.getElementById('questionnaire-progress-bar');
+  const form = document.getElementById('questionnaire-form');
+
+  function showAlert(msg, isError = true) {
+    alertBox.textContent = msg;
+    alertBox.className = `alert ${isError ? 'alert-danger' : 'alert-success'}`;
+    alertBox.style.display = 'block';
+  }
+
+  // Load questionnaire
+  const res = await api.get('/assessment/questionnaire');
+  if (!res.ok || !res.data.success) {
+    showAlert('Error loading questionnaire from server.');
+    return;
+  }
+
+  const questions = res.data.data.questions || [];
+  const scale = res.data.data.scale || [];
+
+  // Check if user already has saved symptoms
+  const user = api.getUser() || {};
+  const saved = user.latest_symptoms || {};
+
+  container.innerHTML = questions.map((q, idx) => {
+    const currentVal = saved[q.id] !== undefined ? parseInt(saved[q.id]) : null;
+
+    return `
+      <div class="card question-card" style="margin-bottom: 1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 0.75rem;">
+          <div>
+            <span class="badge badge-info" style="margin-bottom: 0.35rem;">Q${idx + 1} &bull; ${q.category}</span>
+            <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-top: 0.25rem;">${q.question}</h3>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); text-align:right;">
+            Relates to: ${q.associated_nutrients.map(n => n.replace('_', ' ').toUpperCase()).join(', ')}
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin-top: 0.75rem;">
+          ${scale.map(s => `
+            <label style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.65rem 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; background: ${currentVal === s.value ? 'var(--primary-50)' : 'var(--bg-surface)'};">
+              <input type="radio" name="${q.id}" value="${s.value}" ${currentVal === s.value ? 'checked' : ''} onchange="updateProgress()">
+              <span style="font-size: 0.85rem; font-weight: 500;"><strong>${s.value}</strong> - ${s.label.split('(')[0].trim()}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  window.updateProgress = () => {
+    let answered = 0;
+    questions.forEach(q => {
+      const checked = document.querySelector(`input[name="${q.id}"]:checked`);
+      if (checked) answered++;
+    });
+
+    const pct = Math.round((answered / questions.length) * 100);
+    progressText.textContent = `${answered} / ${questions.length} Answered (${pct}%)`;
+    progressBar.style.width = `${pct}%`;
+  };
+
+  updateProgress();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const responses = {};
+
+    questions.forEach(q => {
+      const checked = document.querySelector(`input[name="${q.id}"]:checked`);
+      responses[q.id] = checked ? parseInt(checked.value) : 0;
+    });
+
+    const submitBtn = document.getElementById('save-symptoms-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    const saveRes = await api.post('/assessment/symptoms', { symptoms: responses });
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save Symptom Responses';
+
+    if (saveRes.ok && saveRes.data.success) {
+      showAlert('Symptom responses saved successfully! You can now run a full AI Assessment.', false);
+      const u = api.getUser() || {};
+      u.latest_symptoms = responses;
+      api.setUser(u);
+    } else {
+      showAlert(saveRes.data.message || 'Error saving symptom responses.');
+    }
+  });
+});
+</script>
+{% endblock %}
